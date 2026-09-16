@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Salin file ini menjadi "test.runsettings", lalu sesuaikan connection string
+  di bawah dengan database test milik Anda.
+
+  Siapkan database terpisah terlebih dahulu:
+      CREATE DATABASE ordermanagement_test;
+
+  Schema dibuat otomatis oleh DatabaseFixture saat test pertama dijalankan.
+  Antar test, isi tabel di-reset dengan Respawn.
+
+  Menjalankan test:
+    - Visual Studio : Test > Configure Run Settings > Select Solution Wide runsettings File
+    - CLI           : dotnet test --settings test.runsettings
+
+  Catatan: "test.runsettings" masuk .gitignore karena berisi kredensial.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <TEST_DB_CONNECTION>Host=localhost;Port=5432;Database=ordermanagement_test;Username=postgres;Password=postgres</TEST_DB_CONNECTION>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>
