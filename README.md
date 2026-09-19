@@ -42,46 +42,32 @@ Ketiga skenario diverifikasi oleh test yang berjalan di atas PostgreSQL asli, de
 
 ### Prasyarat
 
-- .NET 10 SDK
-- PostgreSQL 16+ (lokal, Docker, atau cloud)
+- **.NET 10 SDK**
+- **PostgreSQL 16+** — lewat Docker (disarankan) atau instalasi lokal
+- **EF Core CLI** — install sekali dengan:
+  ```bash
+  dotnet tool install --global dotnet-ef
+  ```
+  Setelah instalasi, tutup dan buka ulang terminal agar PATH terbaca.
 
 ### Langkah
 
 ```bash
-git clone <https://github.com/Jordi101ok/OrderManagement.git>
+git clone https://github.com/Jordi101ok/OrderManagement.git
 cd OrderManagement
-```
 
-**1. Siapkan database**
-
-Dengan Docker:
-
-```bash
 docker compose up -d
-```
 
-Atau gunakan PostgreSQL yang sudah ada, lalu sesuaikan connection string di langkah berikutnya.
-
-**2. Set connection string**
-
-```bash
-cd src/OrderManagement.Api
-dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Database=ordermanagement;Username=postgres;Password=postgres"
-```
-
-Bisa juga langsung mengubah `appsettings.Development.json` — nilai defaultnya sudah menunjuk ke konfigurasi `docker-compose.yml` di atas.
-
-**3. Jalankan migration dan aplikasi**
-
-```bash
-cd ../..
 dotnet ef database update -p src/OrderManagement.Infrastructure -s src/OrderManagement.Api
+
 dotnet run --project src/OrderManagement.Api
 ```
 
-Seluruh schema dibuat otomatis oleh migration ke schema `oms`.
+Connection string default di `appsettings.json` sudah cocok dengan `docker-compose.yml`, jadi tidak ada konfigurasi yang perlu diubah. Migration membuat seluruh schema (tabel, index, check constraint) ke schema `oms`.
 
-**4. Seed data (opsional, untuk mencoba API)**
+URL Swagger tercetak di console saat aplikasi start — tambahkan `/swagger` di belakangnya.
+
+### Seed data (opsional, untuk mencoba API)
 
 Jalankan `scripts/seed.sql` terhadap database yang sama. Isinya tiga produk:
 
@@ -91,11 +77,18 @@ Jalankan `scripts/seed.sql` terhadap database yang sama. Isinya tiga produk:
 | Product Y | 100 | Pengujian umum |
 | Product Z | 0 | Pengujian penolakan karena stock habis |
 
-### Setelah jalan
+### Kalau ada kendala
 
-- Swagger UI: `https://localhost:7071/swagger` (atau `http://localhost:5104/swagger` jika dijalankan lewat `dotnet run`)
+**Port 5432 sudah dipakai.** Jika di komputer Anda sudah ada PostgreSQL lain yang berjalan, container tidak akan bisa diakses karena instalasi lokal yang menangkap koneksinya. Ubah mapping port di `docker-compose.yml` menjadi `"5433:5432"`, lalu sesuaikan `Port=5433` di `appsettings.json`, dan jalankan ulang `docker compose down && docker compose up -d`.
 
-> **Catatan:** development dilakukan dengan PostgreSQL di Neon (cloud). `docker-compose.yml` disediakan untuk kemudahan reviewer, namun belum diuji langsung di environment pengembangan.
+**Browser menolak sertifikat HTTPS.** Jalankan sekali: `dotnet dev-certs https --trust`
+
+**Menggunakan PostgreSQL lokal, bukan Docker.** Buat database bernama `ordermanagement`, lalu sesuaikan connection string di `appsettings.json` — atau lebih aman lewat user secrets:
+```bash
+dotnet user-secrets set "ConnectionStrings:Default" "<connection string Anda>" --project src/OrderManagement.Api
+```
+
+> **Catatan:** development dilakukan dengan PostgreSQL di Neon (cloud), namun langkah di atas sudah diverifikasi berjalan dari hasil clone bersih menggunakan `docker-compose.yml` yang disertakan.
 
 ---
 
@@ -168,7 +161,7 @@ Diimplementasikan sebagai action filter (`IdempotencyFilter`), bukan di dalam se
 
 ## Concurrency Handling
 
-Tiap skenario mendapat mekanisme yang sesuai sifat masalahnya. Benang merahnya: **jaminan diserahkan ke database, bukan ke kode aplikasi.** Kode bisa punya race window, constraint database tidak.
+Tiap skenario mendapat mekanisme yang sesuai sifat masalahnya.
 
 ### Skenario A — Concurrent Stock Deduction
 
